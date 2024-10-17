@@ -96,7 +96,7 @@
             width: 100%;
             height: auto;
         }
-        
+
         .error-popup {
             display: none; /* Hidden by default */
             position: fixed;
@@ -154,11 +154,10 @@
 
 	<div class="preloader" id="preloader">
         <div class="loader"></div>
-		
-		<p style="color: #00d427; margin-top: 20px; font-size: 18px;"><img src='https://raw.githubusercontent.com/Ameesh-vinton/cutlist/refs/heads/main/logo2.png'></p>
+		<p style="color: #00d427; margin-top: 20px; font-size: 18px;">
+            <img src='https://raw.githubusercontent.com/Ameesh-vinton/cutlist/refs/heads/main/logo2.png'>
+        </p>
         <p style="color: #00d427; margin-top: 20px; font-size: 15px;">Loading, please wait...</p>
-		
-		
     </div>
 
     <header>
@@ -195,6 +194,7 @@
             <p id="fit-status"></p>
             <p id="usable-width-height"></p>
             <p id="remaining-area"></p>
+            <p id="remaining-width-height"></p>
         </div>
 
         <button onclick="checkAndDrawRectangles()">Start</button>
@@ -214,14 +214,13 @@
     <div class="overlay" id="overlay" style="display: none;"></div>
 
     <script>
-	
-			// Show the preloader and hide it after 2 seconds
+        // Show the preloader and hide it after 2 seconds
         window.onload = function() {
             setTimeout(function() {
                 document.getElementById('preloader').style.display = 'none';
             }, 2000);
         };
-			
+        
         function checkAndDrawRectangles() {
             const rect1Width = parseFloat(document.getElementById('rect1-width').value);
             const rect1Height = parseFloat(document.getElementById('rect1-height').value);
@@ -246,7 +245,6 @@
             // Calculate total area of cut sizes in mm²
             const totalCutArea = rect1Width * rect1Height * quantity1;
             const availableArea = rect2Width * rect2Height;
-            const remainingArea = availableArea - totalCutArea;
 
             // Check if cut sizes fit within available size
             const fitStatus = totalCutArea <= availableArea ? 'Fits within available sheet.' : 'Does not fit within available sheet.';
@@ -254,7 +252,8 @@
             // Display results
             document.getElementById('fit-status').innerText = fitStatus;
             document.getElementById('usable-width-height').innerText = `Used Material: ${totalCutArea} mm²`;
-            document.getElementById('remaining-area').innerText = `Balance Material: ${remainingArea} mm²`;
+            document.getElementById('remaining-area').innerText = `Balance Material Area: ${availableArea - totalCutArea} mm²`;
+            document.getElementById('remaining-width-height').innerText = '';
             document.getElementById('result-section').style.display = 'block';
 
             // Proceed to draw rectangles if fitting
@@ -266,18 +265,6 @@
 
             drawRectangles(rect1Width, rect1Height, quantity1, rect2Width, rect2Height);
         }
-
-        function showPopup() {
-            const errorPopup = document.getElementById('errorPopup');
-            const overlay = document.getElementById('overlay');
-            errorPopup.style.display = 'block';
-            overlay.style.display = 'block';
-        }
-
-        document.getElementById('closePopupBtn').addEventListener('click', function() {
-            document.getElementById('errorPopup').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        });
 
         function drawRectangles(rect1Width, rect1Height, quantity1, rect2Width, rect2Height) {
             const canvas = document.getElementById('canvas');
@@ -292,10 +279,12 @@
             const scaledRect2Width = rect2Width * scale;
             const scaledRect2Height = rect2Height * scale;
 
+            // Draw the available sheet
             ctx.fillStyle = '#CCCCFF'; // Light Blue for outer rectangle
             ctx.fillRect(0, 0, scaledRect2Width, scaledRect2Height);
 
-            ctx.fillStyle = '#FF6666'; // Light Red for inner rectangles
+            // Draw cut rectangles
+            ctx.fillStyle = '#FF0000'; // Red for cut rectangles
             let x = 0, y = 0, count = 0;
 
             while (count < quantity1 && y + scaledRect1Height <= scaledRect2Height) {
@@ -303,6 +292,16 @@
                     ctx.fillRect(x, y, scaledRect1Width, scaledRect1Height);
                     ctx.strokeStyle = '#FF0000'; // Red border
                     ctx.strokeRect(x, y, scaledRect1Width, scaledRect1Height);
+                    ctx.fillStyle = '#FFFFFF'; // White for serial number
+                    ctx.font = '6px Arial'; // Reduced font size
+                    ctx.fillText(`SN: ${count + 1}`, x + 5, y + 10); // Serial number
+                    
+                    // Display dimensions
+                    ctx.fillStyle = '#000'; // Black for dimensions
+                    ctx.font = '8px Arial'; // Font size for dimensions
+                    ctx.fillText(`W: ${rect1Width}mm`, x + 5, y + 20); // Width
+                    ctx.fillText(`H: ${rect1Height}mm`, x + 5, y + 30); // Height
+                    
                     x += scaledRect1Width;
                     count++;
                 } else {
@@ -317,19 +316,26 @@
         }
 
         function clearInputs() {
-            document.getElementById('rect2-width').value = '';
-            document.getElementById('rect2-height').value = '';
             document.getElementById('rect1-width').value = '';
             document.getElementById('rect1-height').value = '';
             document.getElementById('quantity1').value = '';
+            document.getElementById('rect2-width').value = '';
+            document.getElementById('rect2-height').value = '';
+            document.getElementById('result-section').style.display = 'none';
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-            document.getElementById('result-section').style.display = 'none'; // Hide results section
-            document.getElementById('popup-error-message').innerText = ''; // Clear popup message
-            document.getElementById('errorPopup').style.display = 'none'; // Hide popup
-            document.getElementById('overlay').style.display = 'none'; // Hide overlay
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
+
+        function showPopup() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('errorPopup').style.display = 'block';
+        }
+
+        document.getElementById('closePopupBtn').onclick = function() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('errorPopup').style.display = 'none';
+        };
     </script>
 </body>
 </html>
